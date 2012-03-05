@@ -1,5 +1,6 @@
 package it.patama.data;
 
+import java.io.File;
 import java.util.Date;
 
 import javax.swing.ImageIcon;
@@ -13,6 +14,8 @@ public class SaveData {
 		date;
 	private Date
 		filetime;
+	private File
+		saveFile;
 	private int 
 		level;
 	private ImageIcon
@@ -81,5 +84,13 @@ public class SaveData {
 	
 	public void setFiletime(final Date filetime){
 		this.filetime = filetime;
+	}
+
+	public File getSaveFile() {
+		return saveFile;
+	}
+
+	public void setSaveFile(File saveFile) {
+		this.saveFile = saveFile;
 	}
 }

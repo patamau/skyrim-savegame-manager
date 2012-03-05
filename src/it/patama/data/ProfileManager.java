@@ -12,7 +12,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -39,23 +41,23 @@ public class ProfileManager {
 	}
 	
 	/**
-	 * Creates a save files zip assuming the given savedata as representative of the archive
+	 * Creates an archive for the given profile name
 	 * @param save
 	 * @throws IOException
 	 */
-	public File createZip(final SaveData save, final File folder) throws IOException {
+	public File createZip(final String name, final File folder) throws IOException {
 		byte[] buf = new byte[1024];
 		
-	    File outFile = new File(save.getName()+"_"+save.getLevel()+".zip");
+	    File outFile = new File(name+".zip");
 	    ZipOutputStream out = new ZipOutputStream(new FileOutputStream(outFile));
 
 	    for (File f: folder.listFiles()) {
 			if(!f.isFile()) continue;
 			if(!f.getName().endsWith(".ess")) continue;
-			if(!f.getName().startsWith("quicksave")&&
-					!f.getName().startsWith("autosave")){
-				continue;
-			}
+			FileInputStream fis = new FileInputStream(f);
+			SaveData s = Parser.parse(fis);
+			fis.close();
+			if(!s.getName().equals(name)) continue;
 	        FileInputStream in = new FileInputStream(f);
 	        out.putNextEntry(new ZipEntry(f.getName()));
 	        System.out.println("Adding save game "+f.getName());
@@ -90,27 +92,52 @@ public class ProfileManager {
 		return profiles;
 	}
 	
+	public Map<String, List<SaveData>> getAll(final File folder) throws IOException {
+		Map<String, List<SaveData>> map = new HashMap<String, List<SaveData>>();
+		
+		for(File f: folder.listFiles()){
+			if(!f.getName().endsWith(".ess")) continue;
+			FileInputStream in = new FileInputStream(f);
+			SaveData save = Parser.parse(in);
+			save.setSaveFile(f);
+			in.close();
+			System.out.println("Parsed "+save.getName()+" ("+f+")");
+			List<SaveData> list = map.get(save.getName());
+			if(list==null){
+				list = new ArrayList<SaveData>();
+				map.put(save.getName(),list);
+			}
+			list.add(save);
+ 		}		
+		
+		return map;
+	}
+	
 	/**
-	 * Parses the save data in the given file
+	 * Parses the save data from the given zip file
 	 * @param folder
 	 * @return
 	 * @throws IOException
 	 */
-	public List<SaveData> getSaves(final File f) throws IOException {
+	public List<SaveData> getSaves(final File zipFile) throws IOException {
 		List<SaveData> saves = new ArrayList<SaveData>();
-		ZipFile zf = new ZipFile(f);
-		ZipEntry latest = null;
+		ZipFile zf = new ZipFile(zipFile);
+		SaveData latest = null;
 	    for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements();){
 	    	ZipEntry entry = e.nextElement();
 	    	SaveData save = Parser.parse(zf.getInputStream(entry));
+	    	save.setSaveFile(new File(entry.getName()));
 	    	if(latest!=null){
-	    		if(latest.getTime()<entry.getTime()){
+	    		long st = save.getFiletime().getTime();
+	    		long best = latest.getFiletime().getTime();
+	    		if(st>best){
+	    			latest = save;
 	    			saves.add(0, save);
 	    		}else{
 	    			saves.add(save);
 	    		}
 	    	}else{
-	    		latest = entry;
+	    		latest = save;
 	    		saves.add(save);
 	    	}
 	    	System.out.println("Save data "+save.getName()+" "+save.getLevel()+" "+save.getDate()+" "+save.getLocation());
@@ -121,7 +148,7 @@ public class ProfileManager {
 	
 	/**
 	 * Retrieve the save data of the most recent
-	 * file on the main folder
+	 * file of the given folder
 	 * @return
 	 * @throws IOException
 	 */
@@ -142,6 +169,7 @@ public class ProfileManager {
 		System.out.println("Latest save is "+recent);
 		InputStream in = new FileInputStream(recent);
 		SaveData save = Parser.parse(in);
+		save.setSaveFile(recent);
 		in.close();
 		return save;
 	}
@@ -150,13 +178,17 @@ public class ProfileManager {
 		ProfileManager man = new ProfileManager();
 		SaveData save;
 		try {
-			save = man.getLatestSave(new File(Main.SAVE_PATH));
+			Map<String, List<SaveData>> map = man.getAll(new File(Main.DEF_SAVE_PATH));
+			for(String k: map.keySet()){
+				System.out.println("Profile "+k+" with "+map.get(k).size()+" saves");
+				File zip = man.createZip(k, new File(Main.DEF_SAVE_PATH));
+			}
+			System.out.println("Loading latest save from "+Main.DEF_SAVE_PATH);
+			save = man.getLatestSave(new File(Main.DEF_SAVE_PATH));
 			System.out.println(save.getName()+" "+save.getLevel());
-			File zip = man.createZip(save, new File(Main.SAVE_PATH));
 			for(ProfileData sd: man.getProfiles(new File("."))){
 				GUI.showPicture(sd.getData());
 			}
-			man.unpackZip(zip, new File("C:\\Temp"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

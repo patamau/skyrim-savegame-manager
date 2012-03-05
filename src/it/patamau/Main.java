@@ -1,10 +1,14 @@
 package it.patamau;
 
+import java.io.File;
+
+import javax.swing.JFileChooser;
+
 import it.patamau.gui.GUI;
 
 public class Main {
 	
-	public static String SAVE_PATH = "C:\\Users\\Matteo Pedrotti\\Documents\\My Games\\Skyrim\\Saves";
+	public static String DEF_SAVE_PATH = (new JFileChooser()).getFileSystemView().getDefaultDirectory().getAbsolutePath()+File.separator+"My Games"+File.separator+"Skyrim"+File.separator+"Saves";  
 
 	public static void main(final String args[]){
 		GUI gui = new GUI();
