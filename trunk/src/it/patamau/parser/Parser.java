@@ -133,8 +133,8 @@ public class Parser {
 		float u2 = Float.intBitsToFloat(parseInt32(stream));
 		float u3 = Float.intBitsToFloat(parseInt32(stream));
 		System.out.println("Unknown data "+u1+" "+u2+" "+u3);
-		Date d = parseFiletime(stream);
-		System.out.println("Filetime is "+d);
+		Date filetime = parseFiletime(stream);
+		System.out.println("Filetime is "+filetime);
 		ImageIcon screenshot = parseScreenshotData(stream);
 		
 		SaveData save = new SaveData();
@@ -144,6 +144,7 @@ public class Parser {
 		save.setLocation(playerLocation);
 		save.setRace(playerRace);
 		save.setScreenshot(screenshot);
+		save.setFiletime(filetime);
 		return save;
 	}
 	
