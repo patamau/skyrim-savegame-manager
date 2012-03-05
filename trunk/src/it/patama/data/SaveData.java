@@ -93,4 +93,8 @@ public class SaveData {
 	public void setSaveFile(File saveFile) {
 		this.saveFile = saveFile;
 	}
+	
+	public String toString(){
+		return name+" "+race+" "+level+" "+date+" "+location+" ("+saveFile+")";
+	}
 }

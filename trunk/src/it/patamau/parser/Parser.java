@@ -154,7 +154,7 @@ public class Parser {
 			InputStream s = new FileInputStream("C:\\Users\\Matteo Pedrotti\\Documents\\My Games\\Skyrim\\Saves\\quicksave.ess");
 			save = Parser.parse(s);
 			s.close();
-			GUI.showPicture(save);
+			GUI.showQuickPick(save);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

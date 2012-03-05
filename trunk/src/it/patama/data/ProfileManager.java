@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +22,29 @@ import java.util.zip.ZipOutputStream;
 
 public class ProfileManager {
 	
-	public void unpackZip(final File sourceFile, final File destinationFolder) throws IOException {
+	private final Map<String, ProfileData> profiles;
+	
+	public ProfileManager(){
+		profiles = new HashMap<String, ProfileData>();
+	}
+	
+	public Collection<String> getProfileNames(){
+		return profiles.keySet();
+	}
+	
+	public Collection<ProfileData> getProfiles(){
+		return profiles.values();
+	}
+	
+	public ProfileData getProfile(final String name){
+		return profiles.get(name);
+	}
+	
+	public void clear(){
+		profiles.clear();
+	}
+	
+	public static void unpackZip(final File sourceFile, final File destinationFolder) throws IOException {
 		byte[] buf = new byte[1024];
 		System.out.println("Opening "+sourceFile.getName());
 		ZipFile zf = new ZipFile(sourceFile);
@@ -45,7 +68,7 @@ public class ProfileManager {
 	 * @param save
 	 * @throws IOException
 	 */
-	public File createZip(final String name, final File folder) throws IOException {
+	public static File createZip(final String name, final File folder) throws IOException {
 		byte[] buf = new byte[1024];
 		
 	    File outFile = new File(name+".zip");
@@ -79,20 +102,18 @@ public class ProfileManager {
 	 * @return
 	 * @throws IOException
 	 */
-	public List<ProfileData> getProfiles(final File folder) throws IOException {
-		List<ProfileData> profiles = new ArrayList<ProfileData>();
+	public void load(final File folder) throws IOException {
 		for(File f: folder.listFiles()){
 			if(!f.getName().endsWith(".zip")) continue;
 			System.out.println("Parsing "+f.getName());
 			ProfileData pd = new ProfileData(f);
 			pd.addAll(getSaves(f));
 			System.out.println("Parsed "+pd.getSaves().size()+" saves");
-			profiles.add(pd);
+			profiles.put(pd.getData().getName(), pd);
  		}		
-		return profiles;
 	}
 	
-	public Map<String, List<SaveData>> getAll(final File folder) throws IOException {
+	public static Map<String, List<SaveData>> getAll(final File folder) throws IOException {
 		Map<String, List<SaveData>> map = new HashMap<String, List<SaveData>>();
 		
 		for(File f: folder.listFiles()){
@@ -119,7 +140,7 @@ public class ProfileManager {
 	 * @return
 	 * @throws IOException
 	 */
-	public List<SaveData> getSaves(final File zipFile) throws IOException {
+	public static List<SaveData> getSaves(final File zipFile) throws IOException {
 		List<SaveData> saves = new ArrayList<SaveData>();
 		ZipFile zf = new ZipFile(zipFile);
 		SaveData latest = null;
@@ -152,7 +173,7 @@ public class ProfileManager {
 	 * @return
 	 * @throws IOException
 	 */
-	public SaveData getLatestSave(final File folder) throws IOException{
+	public static SaveData getLatestSave(final File folder) throws IOException{
 		File recent = null;
 		long best = 0;
 		for(File f : folder.listFiles()){
@@ -175,19 +196,20 @@ public class ProfileManager {
 	}
 	
 	public static void main(String args[]){
-		ProfileManager man = new ProfileManager();
 		SaveData save;
 		try {
-			Map<String, List<SaveData>> map = man.getAll(new File(Main.DEF_SAVE_PATH));
+			Map<String, List<SaveData>> map = ProfileManager.getAll(new File(Main.DEF_SAVE_PATH));
 			for(String k: map.keySet()){
 				System.out.println("Profile "+k+" with "+map.get(k).size()+" saves");
-				File zip = man.createZip(k, new File(Main.DEF_SAVE_PATH));
+				File zip = ProfileManager.createZip(k, new File(Main.DEF_SAVE_PATH));
 			}
 			System.out.println("Loading latest save from "+Main.DEF_SAVE_PATH);
-			save = man.getLatestSave(new File(Main.DEF_SAVE_PATH));
+			save = ProfileManager.getLatestSave(new File(Main.DEF_SAVE_PATH));
 			System.out.println(save.getName()+" "+save.getLevel());
-			for(ProfileData sd: man.getProfiles(new File("."))){
-				GUI.showPicture(sd.getData());
+			ProfileManager man = new ProfileManager();
+			man.load(new File("."));
+			for(ProfileData sd: man.getProfiles()){
+				GUI.showQuickPick(sd.getData());
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
