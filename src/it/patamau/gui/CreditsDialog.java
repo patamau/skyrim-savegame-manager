@@ -13,6 +13,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 public class CreditsDialog extends JDialog {
 
@@ -35,7 +36,9 @@ public class CreditsDialog extends JDialog {
 		gc.gridx=gc.gridy=0;
 		gc.insets = new Insets(5,5,5,5);
 		JLabel title = new JLabel("Skyrim Savegame Manager - "+Main.VERSION);		
-		JLabel author = new JLabel("Matteo Pedrotti - patamau@gmail.com");	
+		JTextField author = new JTextField("Matteo Pedrotti <patamau@gmail.com>");
+		author.setBackground(Color.WHITE);
+		author.setEditable(false);
 		JLabel date = new JLabel("2012/03/06");
 		JLabel credits = new JLabel("<html><small>Thanks to<br/> " +
 				"Bethesda Softworks for this great game<br/>" +
