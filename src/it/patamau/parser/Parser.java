@@ -1,6 +1,6 @@
 package it.patamau.parser;
 
-import it.patama.data.SaveData;
+import it.patamau.data.SaveData;
 import it.patamau.gui.GUI;
 
 import java.awt.image.BufferedImage;
