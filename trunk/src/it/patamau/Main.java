@@ -6,7 +6,7 @@ import java.io.IOException;
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 
-import it.patama.data.ProfileManager;
+import it.patamau.data.ProfileManager;
 import it.patamau.gui.GUI;
 
 public class Main {

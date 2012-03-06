@@ -1,4 +1,4 @@
-package it.patama.data;
+package it.patamau.data;
 
 import it.patamau.Main;
 import it.patamau.gui.GUI;

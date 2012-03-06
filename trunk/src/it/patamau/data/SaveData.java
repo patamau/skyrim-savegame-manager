@@ -1,4 +1,4 @@
-package it.patama.data;
+package it.patamau.data;
 
 import java.io.File;
 import java.util.Date;
