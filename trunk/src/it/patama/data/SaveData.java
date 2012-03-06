@@ -95,6 +95,6 @@ public class SaveData {
 	}
 	
 	public String toString(){
-		return name+" "+race+" "+level+" "+date+" "+location+" ("+saveFile+")";
+		return saveFile.getName();
 	}
 }

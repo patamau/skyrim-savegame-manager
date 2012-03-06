@@ -8,10 +8,15 @@ public class ProfileData {
 
 	private final List<SaveData> data;
 	private File zipFile;
+	private boolean current;
 	
 	public ProfileData(final File zipFile){
 		this.data = new ArrayList<SaveData>();
 		this.zipFile = zipFile;
+	}
+	
+	public ProfileData(){
+		this.data = new ArrayList<SaveData>();
 	}
 	
 	public SaveData getData(){
@@ -23,7 +28,7 @@ public class ProfileData {
 		return data;
 	}
 
-	public void addSaves(final SaveData data) {
+	public void addSave(final SaveData data) {
 		this.data.add(data);
 	}
 	
@@ -43,5 +48,18 @@ public class ProfileData {
 		this.zipFile = zipFile;
 	}
 	
+	public String toString(){
+		if(current){
+			return "<html>"+data.get(0).getName()+" <small>current</small></html>";
+		}
+		return data.get(0).getName();
+	}
 	
+	public void setCurrent(final boolean current){
+		this.current = current;
+	}
+	
+	public boolean getCurrent(){
+		return current;
+	}
 }
