@@ -16,6 +16,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 import javax.swing.Box;
@@ -30,11 +31,13 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -61,6 +64,8 @@ public class GUI extends JFrame implements ListSelectionListener, ActionListener
 	private JMenuItem refreshItem, optionsItem, exitItem, aboutItem;
 	private JButton  deployButton, deleteButton, removeButton;
 	private JLabel nameLabel, levelLabel, dateLabel, locationLabel, raceLabel, screenshotLabel, filenameLabel, filetimeLabel;
+	private JLabel statusLabel;
+	private JProgressBar progressBar;
 
 	public GUI(final ProfileManager manager){
 		super();
@@ -72,8 +77,18 @@ public class GUI extends JFrame implements ListSelectionListener, ActionListener
 		splitPane.setDividerLocation(150);
 		splitPane.setContinuousLayout(true);
 		this.getContentPane().add(splitPane, BorderLayout.CENTER);
+		this.getContentPane().add(createStatusPanel(), BorderLayout.SOUTH);
 		this.setJMenuBar(createMenuBar());
 		this.refresh();
+	}
+	
+	private JComponent createStatusPanel(){
+		JPanel panel = new JPanel();
+		statusLabel = new JLabel("Ready");
+		panel.add(statusLabel);
+		progressBar = new JProgressBar();
+		panel.add(progressBar);
+		return panel;
 	}
 	
 	private JMenuBar createMenuBar(){
@@ -95,7 +110,7 @@ public class GUI extends JFrame implements ListSelectionListener, ActionListener
 		fileMenu.add(exitItem);
 		
 		JMenu helpMenu = new JMenu("Help");
-		aboutItem = new JMenuItem("About");
+		aboutItem = new JMenuItem("About...");
 		aboutItem.addActionListener(this);
 		helpMenu.add(aboutItem);
 		
@@ -276,150 +291,183 @@ public class GUI extends JFrame implements ListSelectionListener, ActionListener
 		}
 		profileList.setSelectedIndex(0);
 	}
-
-	public void actionPerformed(ActionEvent ev) {
-		Object src = ev.getSource();
-		if(src == optionsItem){
-			OptionsDialog dialog = new OptionsDialog(this, manager.getSavesFolder(), manager.getProfilesFolder());
-			dialog.setModal(true);
-			dialog.setVisible(true);
-			File sf = dialog.getSavesFolder();
-			File pf = dialog.getProfilesFolder();
-			if(sf!=null){
-				System.out.println(sf);
-				manager.setSavesFolder(sf);
-			}
-			if(pf!=null){
-				System.out.println(pf);
-				manager.setProfilesFolder(pf);
-			}
-			if(sf!=null||pf!=null){
-				try {
-					manager.saveProperties();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				refresh();
-			}
-		} else if(src == exitItem){
-			this.dispose();
-		} else if(src == refreshItem){
-			refresh();
-		} else if(src == aboutItem){
-			CreditsDialog dialog = new CreditsDialog(this);
-			dialog.setVisible(true);
-		}else if(src == deployButton){
-			int i = profileList.getSelectedIndex();
-			ProfileData profile;
-			if(i<0){
-				JOptionPane.showMessageDialog(this, "Select a valid profile to be used", "Invalid profile", JOptionPane.WARNING_MESSAGE);
-				return;
-			}else if(i==0){
-				Map<String, ProfileData> current = manager.getCurrent();
-				if(current.size()>0){
-					boolean found = false;
-					for(String n: current.keySet()){
-						if(manager.getProfileNames().contains(n)){
-							found=true;
-							break;
-						}
-					}
-					if(found){
-						int ch = JOptionPane.showConfirmDialog(this, "Current archives will be overwritten, are you sure you want to backup?", "Confirm backup", JOptionPane.YES_NO_OPTION);
-						if(ch != JOptionPane.YES_OPTION) return;
+	
+	private void deploy(){
+		int i = profileList.getSelectedIndex();
+		ProfileData profile;
+		if(i<0){
+			JOptionPane.showMessageDialog(this, "Please select a valid profile to be used", "Invalid profile", JOptionPane.WARNING_MESSAGE);
+			return;
+		}else if(i==0){
+			Map<String, ProfileData> current = manager.getCurrent();
+			if(current.size()>0){
+				boolean found = false;
+				for(String n: current.keySet()){
+					if(manager.getProfileNames().contains(n)){
+						found=true;
+						break;
 					}
 				}
-				try {
-					manager.backup();
-				} catch (IOException e) {
-					JOptionPane.showMessageDialog(this, e.getMessage(), "Backup error", JOptionPane.ERROR_MESSAGE);
-				}
-				refresh();
-				return;
-			}else{
-				profile = (ProfileData)profileList.getSelectedValue();
-			}
-			if(manager.getCurrent().size()>0){
-				int ch = JOptionPane.showConfirmDialog(this, "Do you want to remove the current saves?", "Remove current saves", JOptionPane.YES_NO_CANCEL_OPTION);
-				if(ch==JOptionPane.YES_OPTION){
-					try{
-						manager.removeSaves();
-					}catch(IOException e){
-						JOptionPane.showMessageDialog(this, e.getMessage(), "Clear error", JOptionPane.ERROR_MESSAGE);
-					}
-				}else if(ch==JOptionPane.CANCEL_OPTION){
-					return;
+				if(found){
+					int ch = JOptionPane.showConfirmDialog(this, "One ore more profiles will be overwritten, are you sure you want to overwrite?", "Confirm overwrite", JOptionPane.YES_NO_OPTION);
+					if(ch != JOptionPane.YES_OPTION) return;
 				}
 			}
-			try{
-				manager.deployProfile(profile);
+			try {
+				manager.backup();
 			} catch (IOException e) {
-				JOptionPane.showMessageDialog(this, e.getMessage(), "Deploy error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, e.getMessage(), "Backup error", JOptionPane.ERROR_MESSAGE);
 			}
 			refresh();
-		}else if(src == deleteButton){
-			int ch = JOptionPane.showConfirmDialog(this, "Save file will be lost forever. Are you sure?", "Delete save", JOptionPane.YES_NO_OPTION);
-			if(ch!=JOptionPane.YES_OPTION) return;
-			if(this.profileList.getSelectedIndex()<1){
+			return;
+		}else{
+			profile = (ProfileData)profileList.getSelectedValue();
+		}
+		if(manager.getCurrent().size()>0){
+			int ch = JOptionPane.showConfirmDialog(this, "Do you want to remove the current saves?", "Remove current saves", JOptionPane.YES_NO_CANCEL_OPTION);
+			if(ch==JOptionPane.YES_OPTION){
+				try{
+					manager.removeSaves();
+				}catch(IOException e){
+					JOptionPane.showMessageDialog(this, e.getMessage(), "Clear error", JOptionPane.ERROR_MESSAGE);
+				}
+			}else if(ch==JOptionPane.CANCEL_OPTION){
+				return;
+			}
+		}
+		try{
+			manager.deployProfile(profile);
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Deploy error", JOptionPane.ERROR_MESSAGE);
+		}
+		refresh();
+	}
+	
+	private void delete(){
+		if(this.profileList.getSelectedIndex()<1){
+			SaveData save = (SaveData)this.savesList.getSelectedValue();
+			if(save==null){
+				JOptionPane.showMessageDialog(this, "No save entry selected", "Delete error", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			if(save.getSaveFile().exists()){
+				int ch = JOptionPane.showConfirmDialog(this, "Save file "+save.getSaveFile().getName()+" will be lost forever. Are you sure?", "Delete save", JOptionPane.YES_NO_OPTION);
+				if(ch!=JOptionPane.YES_OPTION) return;
+				if(!save.getSaveFile().delete()){
+					JOptionPane.showMessageDialog(this, "Unable to delete "+save.getSaveFile().getName(), "Delete error", JOptionPane.ERROR_MESSAGE);
+				}
+			}else{
+				JOptionPane.showMessageDialog(this, "Save file "+save.getSaveFile().getName()+" does not exist!", "Delete error", JOptionPane.ERROR_MESSAGE);
+			}
+		}else{
+			ProfileData profile = (ProfileData)this.profileList.getSelectedValue();
+			if(profile.getZipFile().exists()){
 				SaveData save = (SaveData)this.savesList.getSelectedValue();
 				if(save==null){
 					JOptionPane.showMessageDialog(this, "No save entry selected", "Delete error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
-				if(save.getSaveFile().exists()){
-					if(!save.getSaveFile().delete()){
-						JOptionPane.showMessageDialog(this, "Unable to delete "+save.getSaveFile(), "Delete error", JOptionPane.ERROR_MESSAGE);
+				if(profile.getSaves().size()>1){
+					int ch = JOptionPane.showConfirmDialog(this, "Save file "+save.getSaveFile().getName()+" will be lost forever. Are you sure?", "Delete save", JOptionPane.YES_NO_OPTION);
+					if(ch!=JOptionPane.YES_OPTION) return;
+					try {
+						ProfileManager.deleteZipEntry(profile.getZipFile(), new String[]{save.getSaveFile().getName()});
+					} catch (IOException e) {
+						JOptionPane.showMessageDialog(this, "Unable to delete "+save.getSaveFile().getName()+" from the profile", "Delete error", JOptionPane.ERROR_MESSAGE);
 					}
 				}else{
-					JOptionPane.showMessageDialog(this, "File "+save.getSaveFile()+" does not exist!", "Delete error", JOptionPane.ERROR_MESSAGE);
+					remove();
 				}
-			}else{
-				ProfileData profile = (ProfileData)this.profileList.getSelectedValue();
-				if(profile.getZipFile().exists()){
-					SaveData save = (SaveData)this.savesList.getSelectedValue();
-					if(save==null){
-						JOptionPane.showMessageDialog(this, "No save entry selected", "Delete error", JOptionPane.ERROR_MESSAGE);
-						return;
-					}
-					if(profile.getSaves().size()>1){
-						try {
-							ProfileManager.deleteZipEntry(profile.getZipFile(), new String[]{save.getSaveFile().getName()});
-						} catch (IOException e) {
-							JOptionPane.showMessageDialog(this, "Unable to remove "+save.getSaveFile().getName()+" from the profile", "Delete error", JOptionPane.ERROR_MESSAGE);
-						}
-					}else{
-						JOptionPane.showMessageDialog(this, "Cannot delete all the saves from the profile. Use the 'Remove' button to remove the profile.", "Cannot delete the last savegame", JOptionPane.WARNING_MESSAGE);
-					}
-				}
+			}
+		}
+		refresh();
+	}
+	
+	private void showOptions(){
+		OptionsDialog dialog = new OptionsDialog(this, manager.getSavesFolder(), manager.getProfilesFolder());
+		dialog.setModal(true);
+		dialog.setVisible(true);
+		File sf = dialog.getSavesFolder();
+		File pf = dialog.getProfilesFolder();
+		if(sf!=null){
+			System.out.println(sf);
+			manager.setSavesFolder(sf);
+		}
+		if(pf!=null){
+			System.out.println(pf);
+			manager.setProfilesFolder(pf);
+		}
+		if(sf!=null||pf!=null){
+			try {
+				manager.saveProperties();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 			refresh();
-		}else if(src == removeButton){
-			if(this.profileList.getSelectedIndex()<0){
-				JOptionPane.showMessageDialog(this, "No valid profile entry selected (current cannot be removed)", "Remove error", JOptionPane.ERROR_MESSAGE);
-			}else if(this.profileList.getSelectedIndex()==0){
-				if(manager.getCurrent().size()>0){
-					int ch = JOptionPane.showConfirmDialog(this, "All current saves will be lost forever. Are you sure?", "Remove all saves", JOptionPane.YES_NO_OPTION);
-					if(ch!=JOptionPane.YES_OPTION) return;
-					try{
-						manager.removeSaves();
-					}catch(IOException e){
-						JOptionPane.showMessageDialog(this, e.getMessage(), "Clear error", JOptionPane.ERROR_MESSAGE);
-					}
-					refresh();
-				}
-			}else{
-				ProfileData profile = (ProfileData)this.profileList.getSelectedValue();
-				int ch = JOptionPane.showConfirmDialog(this, profile.getData().getName()+" profile will be lost forever. Are you sure?", "Remove profile", JOptionPane.YES_NO_OPTION);
+		}
+	}
+	
+	private void remove(){
+		if(this.profileList.getSelectedIndex()<0){
+			JOptionPane.showMessageDialog(this, "No valid profile entry selected", "Remove error", JOptionPane.ERROR_MESSAGE);
+		}else if(this.profileList.getSelectedIndex()==0){
+			if(manager.getCurrent().size()>0){
+				int ch = JOptionPane.showConfirmDialog(this, "All current saves will be lost forever. Are you sure?", "Remove all saves", JOptionPane.YES_NO_OPTION);
 				if(ch!=JOptionPane.YES_OPTION) return;
-				if(profile.getZipFile().exists()){
-					if(!profile.getZipFile().delete()){
-						JOptionPane.showMessageDialog(this, "Unable to delete "+profile.getZipFile(), "Delete error", JOptionPane.ERROR_MESSAGE);
-					}
-					refresh();
-				}else{
-					JOptionPane.showMessageDialog(this, "Profile archive "+profile.getZipFile()+" does not exist", "Remove error", JOptionPane.ERROR_MESSAGE);
+				try{
+					manager.removeSaves();
+				}catch(IOException e){
+					JOptionPane.showMessageDialog(this, e.getMessage(), "Clear error", JOptionPane.ERROR_MESSAGE);
 				}
+				refresh();
 			}
+		}else{
+			ProfileData profile = (ProfileData)this.profileList.getSelectedValue();
+			int ch = JOptionPane.showConfirmDialog(this, profile.getData().getName()+" profile will be lost forever. Are you sure?", "Remove profile", JOptionPane.YES_NO_OPTION);
+			if(ch!=JOptionPane.YES_OPTION) return;
+			if(profile.getZipFile().exists()){
+				if(!profile.getZipFile().delete()){
+					JOptionPane.showMessageDialog(this, "Unable to delete "+profile.getZipFile(), "Delete error", JOptionPane.ERROR_MESSAGE);
+				}
+				refresh();
+			}else{
+				JOptionPane.showMessageDialog(this, "Profile archive "+profile.getZipFile()+" does not exist", "Remove error", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+	}
+
+	public void actionPerformed(ActionEvent ev) {
+		Object src = ev.getSource();
+		if(src == optionsItem){
+			showOptions();
+		} else if(src == exitItem){
+			this.dispose();
+		} else if(src == refreshItem){
+			statusLabel.setText("Refreshing...");
+			refresh();
+			statusLabel.setText("Done");
+		} else if(src == aboutItem){
+			CreditsDialog dialog = new CreditsDialog(this);
+			dialog.setVisible(true);
+		}else if(src == deployButton){
+			Thread t = new Thread(){
+				public void run(){
+					statusLabel.setText("Working...");
+					progressBar.setIndeterminate(true);
+					deploy();
+					progressBar.setIndeterminate(false);
+					statusLabel.setText("Done");
+				}
+			};
+			t.start();
+		}else if(src == deleteButton){
+			statusLabel.setText("Deleting...");
+			delete();
+			statusLabel.setText("Done");
+		}else if(src == removeButton){
+			statusLabel.setText("Removing...");
+			remove();
+			statusLabel.setText("Done");
 		}
 	}
 }
