@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import javax.swing.Box;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -32,14 +33,15 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
-import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 public class GUI extends JFrame implements ListSelectionListener, ActionListener {
-	
+
+	private static final long serialVersionUID = 6536812766780851565L;
+
 	public static void showQuickPick(final SaveData data){
 		JFrame frame = new JFrame();
 		frame.setTitle(data.getName()+" "+data.getLevel()+" "+data.getLocation()+" "+data.getDate());
@@ -56,9 +58,9 @@ public class GUI extends JFrame implements ListSelectionListener, ActionListener
 	private final ProfileManager manager;
 	private JList profileList, savesList;
 	private DefaultListModel profileListModel, savesListModel;
-	private JMenuItem refreshItem, optionsItem, exitItem;
+	private JMenuItem refreshItem, optionsItem, exitItem, aboutItem;
 	private JButton  deployButton, deleteButton, removeButton;
-	private JLabel nameLabel, levelLabel, dateLabel, locationLabel, raceLabel, screenshotLabel;
+	private JLabel nameLabel, levelLabel, dateLabel, locationLabel, raceLabel, screenshotLabel, filenameLabel, filetimeLabel;
 
 	public GUI(final ProfileManager manager){
 		super();
@@ -91,7 +93,15 @@ public class GUI extends JFrame implements ListSelectionListener, ActionListener
 		fileMenu.add(refreshItem);
 		fileMenu.add(new JSeparator());
 		fileMenu.add(exitItem);
+		
+		JMenu helpMenu = new JMenu("Help");
+		aboutItem = new JMenuItem("About");
+		aboutItem.addActionListener(this);
+		helpMenu.add(aboutItem);
+		
 		menuBar.add(fileMenu);
+		menuBar.add(Box.createGlue());
+		menuBar.add(helpMenu);
 		return menuBar;
 	}
 	
@@ -135,6 +145,7 @@ public class GUI extends JFrame implements ListSelectionListener, ActionListener
 		savesList.addListSelectionListener(this);
 		JScrollPane listScroller = new JScrollPane(savesList);
 		listScroller.setMinimumSize(new Dimension(150,100));
+		listScroller.setPreferredSize(new Dimension(300,350));
 		deleteButton = new JButton("Delete");
 		deleteButton.setEnabled(false);
 		deleteButton.addActionListener(this);
@@ -172,11 +183,13 @@ public class GUI extends JFrame implements ListSelectionListener, ActionListener
 		raceLabel = addLabel("Race: ", panel, gc);
 		dateLabel = addLabel("Date: ", panel, gc);
 		locationLabel = addLabel("Location: ", panel, gc);
+		filenameLabel = addLabel("Filename: ", panel, gc);
+		filetimeLabel = addLabel("Last modified: ", panel, gc);
 		gc.gridwidth=2;
 		screenshotLabel = new JLabel();
 		panel.add(screenshotLabel, gc);
 		JScrollPane scrollPane = new JScrollPane(panel);
-		scrollPane.setPreferredSize(new Dimension(650,400));
+		scrollPane.setPreferredSize(new Dimension(480,350));
 		return scrollPane;
 	}
 	
@@ -186,6 +199,16 @@ public class GUI extends JFrame implements ListSelectionListener, ActionListener
     	dateLabel.setText(save.getDate());
     	locationLabel.setText(save.getLocation());
     	raceLabel.setText(save.getRace());
+    	if(save.getSaveFile()!=null){
+    		filenameLabel.setText(save.getSaveFile().getName());
+    	}else{
+    		filenameLabel.setText("N/A");
+    	}
+    	if(save.getFiletime()!=null){
+    		filetimeLabel.setText(save.getFiletime().toString());
+    	}else{
+    		filetimeLabel.setText("N/A");
+    	}
     	screenshotLabel.setIcon(save.getScreenshot());
 	}
 
@@ -271,12 +294,20 @@ public class GUI extends JFrame implements ListSelectionListener, ActionListener
 				manager.setProfilesFolder(pf);
 			}
 			if(sf!=null||pf!=null){
+				try {
+					manager.saveProperties();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 				refresh();
 			}
 		} else if(src == exitItem){
 			this.dispose();
 		} else if(src == refreshItem){
 			refresh();
+		} else if(src == aboutItem){
+			CreditsDialog dialog = new CreditsDialog(this);
+			dialog.setVisible(true);
 		}else if(src == deployButton){
 			int i = profileList.getSelectedIndex();
 			ProfileData profile;

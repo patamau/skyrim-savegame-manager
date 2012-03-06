@@ -11,7 +11,7 @@ import it.patamau.gui.GUI;
 
 public class Main {
 	
-	public static final String VERSION = "0.1a";
+	public static final String VERSION = "0.2b";
 	
 	public static String DEF_SAVE_PATH = (new JFileChooser()).getFileSystemView().getDefaultDirectory().getAbsolutePath()+File.separator+"My Games"+File.separator+"Skyrim"+File.separator+"Saves";
 	
@@ -22,6 +22,7 @@ public class Main {
 		manager.setProfilesFolder(new File("."));
 		manager.setSavesFolder(new File(DEF_SAVE_PATH));
 		try {
+			manager.loadProperties();
 			manager.load();
 		} catch (IOException e) {
 			e.printStackTrace();

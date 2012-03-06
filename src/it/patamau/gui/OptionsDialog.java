@@ -17,6 +17,8 @@ import javax.swing.JPanel;
 
 public class OptionsDialog extends JDialog implements ActionListener {
 
+	private static final long serialVersionUID = 7886282400587323762L;
+
 	private File savesFolder, profilesFolder;
 	
 	private JButton savesFolderButton, profilesFolderButton, okButton, cancelButton;
