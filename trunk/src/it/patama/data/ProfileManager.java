@@ -7,6 +7,7 @@ import it.patamau.parser.Parser;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +17,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -23,7 +25,15 @@ import java.util.zip.ZipOutputStream;
 
 public class ProfileManager {
 	
+	private static final String 
+		KEY_PROFILES_FOLDER = "profilesFolder",
+		KEY_SAVES_FOLDER = "savesFolder";
+
+	public static String DEF_PROP_FILE = "ssm.cfg";
+	
 	private File profilesFolder, savesFolder;
+	
+	private final Properties properties;
 	
 	private final Map<String, ProfileData> profiles;
 	private final Map<String, ProfileData> current;
@@ -31,6 +41,47 @@ public class ProfileManager {
 	public ProfileManager(){
 		profiles = new HashMap<String, ProfileData>();
 		current = new HashMap<String, ProfileData>();
+		properties = new Properties();
+	}
+	
+	public Properties getProperties(){
+		return properties;
+	}
+	
+	public void loadProperties() throws IOException{
+		FileInputStream fis = null;
+		try{
+			fis = new FileInputStream(DEF_PROP_FILE);
+			properties.load(fis);
+			String t; 
+			t = properties.getProperty(KEY_PROFILES_FOLDER);
+			if(t!=null) profilesFolder = new File(t);
+			t = properties.getProperty(KEY_SAVES_FOLDER);
+			if(t!=null) savesFolder = new File(t);
+		}catch(FileNotFoundException e){
+			saveProperties();
+		}finally{
+			if(fis!=null){
+				fis.close();
+			}
+		}
+	}
+	
+	public void saveProperties() throws IOException{
+		System.out.println("Saving configuration to "+DEF_PROP_FILE);
+		FileOutputStream fos = null;
+		try{
+			fos = new FileOutputStream(DEF_PROP_FILE);
+			properties.setProperty(KEY_PROFILES_FOLDER, profilesFolder.getAbsolutePath());
+			properties.setProperty(KEY_SAVES_FOLDER, savesFolder.getAbsolutePath());
+			properties.store(fos, "Skyrim Savegame Manager - "+Main.VERSION);
+		}catch(FileNotFoundException e){
+			throw new IOException(e);
+		}finally{
+			if(fos!=null){
+				fos.close();
+			}
+		}
 	}
 	
 	public void setProfilesFolder(final File profilesFolder){
@@ -287,7 +338,7 @@ public class ProfileManager {
 			Map<String, ProfileData> map = ProfileManager.getAll(new File(Main.DEF_SAVE_PATH));
 			for(String k: map.keySet()){
 				System.out.println("Profile "+k+" with "+map.get(k).getSaves().size()+" saves");
-				File zip = ProfileManager.createZip(k, new File(Main.DEF_SAVE_PATH), new File("."));
+				ProfileManager.createZip(k, new File(Main.DEF_SAVE_PATH), new File("."));
 			}
 			System.out.println("Loading latest save from "+Main.DEF_SAVE_PATH);
 			save = ProfileManager.getFolderSaves(new File(Main.DEF_SAVE_PATH)).get(0);

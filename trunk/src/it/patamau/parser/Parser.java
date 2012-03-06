@@ -53,12 +53,6 @@ public class Parser {
 		return c.getTime();
 	}
 	
-	private static final long parseLong64(final InputStream s) throws IOException{
-		byte[] data = new byte[8];
-		if(s.read(data)<0) throw new IOException("Unexpected end of stream");
-		return bytesToLong(data);
-	}
-	
 	private static final int parseInt16(final InputStream s) throws IOException{
 		byte[] data = new byte[2];
 		if(s.read(data)<0) throw new IOException("Unexpected end of stream");
