@@ -1,32 +1,26 @@
-Skyrim Savegame Manager
+=Skyrim Savegame Manager=
 2012/03/06 0.2b
 Matteo Pedrotti
 patamau@gmail.com
-=======================
 
-Changelog
----------
+===Changelog===
 > 0.2b
 + first publicly available version
 
-Requirements
-------------
+===Requirements===
 Java Runtime Environment 1.5+ is required for the application to launch.
 Any version of Skyrim is supported as far as I know.
 
-Installation
-------------
+===Installation===
 No installation is needed.
 Just copy the .jar file wherever you prefer.
 The .bat must be placed in the same folder of the .jar in order to work.
 
-Execution
----------
+===Execution===
 Either double click on the jar (Javaw should handle this automatically).
 If it doesn't work, launch the .bat file.
 
-Quick start
------------
+===Quick start===
 1) Customize your folder.
 Open File -> Options... and verify the paths are correct.
 You can customize the profiles folder as you prefer
@@ -50,10 +44,7 @@ Quicksaves and autosaves will be recognized as well.
 Remember to backup the current savegames before deploying a new profile
 or you'll lose the progress.
 
-Notes
------
+===Notes===
 Be aware that the application is only considering the character name
 when creating profiles: there is no other way (that I know of)
 to univocally identify a character.
-
-- END OF THE DOCUMENT -
