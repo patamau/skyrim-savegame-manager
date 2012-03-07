@@ -1,7 +1,9 @@
 package it.patamau;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -15,10 +17,19 @@ public class Main {
 	public static final String VERSION = "0.3b";
 	
 	public static String DEF_SAVE_PATH = (new JFileChooser()).getFileSystemView().getDefaultDirectory().getAbsolutePath()+File.separator+"My Games"+File.separator+"Skyrim"+File.separator+"Saves";
-	
-	public static int DEF_WWIDTH = 800, DEF_WHEIGHT = 600;
+	public static String DEF_LOG_FILE = "ssm.log";
 
 	public static void main(final String args[]){
+		//initialize logger
+		try {
+			final Handler logFileHandler = new FileHandler(DEF_LOG_FILE);
+			Logger.getLogger("").addHandler(logFileHandler);
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "Error creating log file "+e, "Initialization error", JOptionPane.ERROR_MESSAGE);
+			e.printStackTrace();
+		} 
+		
+		//initializat profile manager
 		final ProfileManager manager = new ProfileManager();
 		manager.setProfilesFolder(new File("."));
 		manager.setSavesFolder(new File(DEF_SAVE_PATH));
@@ -29,8 +40,9 @@ public class Main {
 			e.printStackTrace();
 			return;
 		}
+		
+		//start gui
 		final GUI gui = new GUI(manager);
-		//gui.setSize(DEF_WWIDTH, DEF_WHEIGHT);
 		gui.pack();
 		gui.setLocationRelativeTo(null);
 		SwingUtilities.invokeLater(new Runnable(){

@@ -42,8 +42,15 @@ public class Parser {
 	    return i;
 	}
 	
+	private static byte[] 
+			wbuffer = new byte[1024],
+			buffer8 = new byte[8],
+			buffer4 = new byte[4],
+			buffer3 = new byte[3],
+			buffer2 = new byte[2];
+	
 	public static final Date parseFiletime(final InputStream stream) throws IOException{
-		byte[] t = new byte[8];
+		byte[] t = buffer8;
 		stream.read(t);
 		long ft = bytesToLong(t);
 		ft/=10000; //nanoseconds
@@ -54,15 +61,27 @@ public class Parser {
 	}
 	
 	private static final int parseInt16(final InputStream s) throws IOException{
-		byte[] data = new byte[2];
+		byte[] data = buffer2;
+		if(s.read(data)<0) throw new IOException("Unexpected end of stream");
+		return bytesToInt(data);
+	}
+	
+	private static final int parseInt24(final InputStream s) throws IOException{
+		byte[] data = buffer3;
 		if(s.read(data)<0) throw new IOException("Unexpected end of stream");
 		return bytesToInt(data);
 	}
 	
 	private static final int parseInt32(final InputStream s) throws IOException{
-		byte[] data = new byte[4];
+		byte[] data = buffer4;
 		if(s.read(data)<0) throw new IOException("Unexpected end of stream");
 		return bytesToInt(data);
+	}
+	
+	private static final long parseLong64(final InputStream s) throws IOException{
+		byte[] data = buffer8;
+		if(s.read(data)<0) throw new IOException("Unexpected end of stream");
+		return bytesToLong(data);
 	}
 	
 	private static void parseMagic(final InputStream s) throws IOException{
@@ -76,16 +95,16 @@ public class Parser {
 	
 	private static final String parseString(final InputStream s) throws IOException{
 		int siz = parseInt16(s);
-		byte[] str = new byte[(int)siz];
+		byte[] str = new byte[siz];
 		s.read(str);
 		return new String(str);
 	}
 	
 	private static final ImageIcon parseScreenshotData(final InputStream s) throws IOException{
-		long shotWidth = parseInt32(s);
-		long shotHeight = parseInt32(s);
+		int shotWidth = parseInt32(s);
+		int shotHeight = parseInt32(s);
 		System.out.println("Screenshot size "+shotWidth+"x"+shotHeight);
-		int imgsize = (int) (3*shotWidth*shotHeight);
+		int imgsize = 3*shotWidth*shotHeight;
 		byte[] data = new byte[imgsize];
 		int len, pos = 0;
 		while((len = s.read(data, pos, imgsize-pos))>=0){
@@ -94,7 +113,7 @@ public class Parser {
 			if(pos>=imgsize) break;
 		}
 		
-		BufferedImage img = new BufferedImage((int)shotWidth, (int)shotHeight, BufferedImage.TYPE_INT_RGB);
+		BufferedImage img = new BufferedImage(shotWidth, shotHeight, BufferedImage.TYPE_INT_RGB);
 		int i=0;
 		for(int y=0; y<shotHeight; ++y){
 			for(int x=0; x<shotWidth; ++x){
@@ -103,6 +122,62 @@ public class Parser {
 			}
 		}
 		return new ImageIcon(img);
+	}
+	
+	public static final void parsePluginInfo(final InputStream s) throws IOException {
+		int pluginCount = s.read();
+		System.out.println("Plugins "+pluginCount);
+		for(int i=0; i<pluginCount; ++i){
+			String plugin = parseString(s);
+			System.out.println("Plugin "+plugin);
+		}
+	}
+	
+	public static final void parseMiscStats(final InputStream s) throws IOException {
+		int count = parseInt32(s);
+		for(int i=0; i<count; ++i){
+			String name = parseString(s);
+			int category = s.read();
+			int value = parseInt32(s);
+			System.out.println(name+" "+category+" "+value);
+		}
+	}
+	
+	public static final void parseRefId(final InputStream s) throws IOException {
+		int b = parseInt24(s);
+		String refID = Integer.toHexString(b);
+		System.out.println("RefID "+refID);
+	}
+	
+	public static final void parseGlobalVariables(final InputStream s) throws IOException {
+		//long count = parseLong64(s);
+		//int count = parseInt32(s);
+		int count = parseInt16(s);
+		//int count = s.read();
+		System.out.println("Global variables "+count);
+		for(int i=0; i<count; ++i){
+			parseRefId(s);
+			float value = Float.intBitsToFloat(parseInt32(s));
+			System.out.println(i+" Parsed "+value);
+		}
+	}
+	
+	private static final void parseGlobalData(final InputStream s) throws IOException {
+		int type = parseInt32(s);
+		int length = parseInt32(s);
+		System.out.println("GlobalData type="+type+" length="+length);
+		switch(type){
+			case 0: //Misc Stats
+				parseMiscStats(s);
+			break;
+			case 3:
+				parseGlobalVariables(s);
+			break;
+			default:
+				System.out.println("Unsupported GlobalData type "+type);
+				s.skip(length);
+			break;
+		}
 	}
 	
 	public static SaveData parse(final InputStream stream) throws IOException{
@@ -130,6 +205,20 @@ public class Parser {
 		Date filetime = parseFiletime(stream);
 		System.out.println("Filetime is "+filetime);
 		ImageIcon screenshot = parseScreenshotData(stream);
+		int formVersion = stream.read();
+		System.out.println("Form version is "+formVersion);
+		int pluginInfoSize = parseInt32(stream);
+		System.out.println("PluginInfo size is "+pluginInfoSize);
+		stream.skip(pluginInfoSize);
+		for(int i=0; i<25; ++i){
+			int val = parseInt32(stream);
+			System.out.println("FileLocationTable value "+val);
+		}
+		parseGlobalData(stream);
+		parseGlobalData(stream);
+		parseGlobalData(stream);
+		parseGlobalData(stream);
+		System.out.println("Done");
 		
 		SaveData save = new SaveData();
 		save.setName(name);
@@ -148,7 +237,7 @@ public class Parser {
 			InputStream s = new FileInputStream("C:\\Users\\Matteo Pedrotti\\Documents\\My Games\\Skyrim\\Saves\\quicksave.ess");
 			save = Parser.parse(s);
 			s.close();
-			GUI.showQuickPick(save);
+			//GUI.showQuickPick(save);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -221,11 +221,7 @@ public class GUI extends JFrame implements ListSelectionListener, ActionListener
     	}else{
     		filenameLabel.setText("N/A");
     	}
-    	if(save.getFiletime()!=null){
-    		filetimeLabel.setText(filetimeFormat.format(save.getFiletime()));
-    	}else{
-    		filetimeLabel.setText("N/A");
-    	}
+    	filetimeLabel.setText(filetimeFormat.format(save.getFiletime()));
     	screenshotLabel.setIcon(save.getScreenshot());
 	}
 	
