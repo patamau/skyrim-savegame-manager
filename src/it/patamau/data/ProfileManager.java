@@ -56,8 +56,10 @@ public class ProfileManager {
 			String t; 
 			t = properties.getProperty(KEY_PROFILES_FOLDER);
 			if(t!=null) profilesFolder = new File(t);
+			System.out.println("ProfilesFolder: "+profilesFolder);
 			t = properties.getProperty(KEY_SAVES_FOLDER);
 			if(t!=null) savesFolder = new File(t);
+			System.out.println("SavesFolder: "+savesFolder);
 		}catch(FileNotFoundException e){
 			saveProperties();
 		}finally{
@@ -222,6 +224,13 @@ public class ProfileManager {
 		current.clear();
 		current.putAll(getAll(savesFolder));
 		profiles.clear();
+		
+		if(!profilesFolder.exists()){
+			throw new IOException(profilesFolder+" does not exist");
+		}else if(!profilesFolder.isDirectory()){
+			throw new IOException(profilesFolder+" is not a directory");
+		}
+		
 		for(File f: profilesFolder.listFiles()){
 			if(!f.getName().endsWith(".zip")) continue;
 			System.out.println("Parsing "+f.getName());
@@ -243,6 +252,11 @@ public class ProfileManager {
 	
 	public static Map<String, ProfileData> getAll(final File folder) throws IOException {
 		Map<String, ProfileData> map = new HashMap<String, ProfileData>();
+		if(!folder.exists()){
+			throw new IOException(folder+" does not exist");
+		}else if(!folder.isDirectory()){
+			throw new IOException(folder+" is not a directory");
+		}
 		
 		for(File f: folder.listFiles()){
 			if(!f.getName().endsWith(".ess")) continue;

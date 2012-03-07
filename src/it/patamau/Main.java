@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import it.patamau.data.ProfileManager;
@@ -11,7 +12,7 @@ import it.patamau.gui.GUI;
 
 public class Main {
 	
-	public static final String VERSION = "0.2b";
+	public static final String VERSION = "0.3b";
 	
 	public static String DEF_SAVE_PATH = (new JFileChooser()).getFileSystemView().getDefaultDirectory().getAbsolutePath()+File.separator+"My Games"+File.separator+"Skyrim"+File.separator+"Saves";
 	
@@ -23,8 +24,8 @@ public class Main {
 		manager.setSavesFolder(new File(DEF_SAVE_PATH));
 		try {
 			manager.loadProperties();
-			manager.load();
-		} catch (IOException e) {
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "Error loading properties file: "+e, "Initialization error", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 			return;
 		}

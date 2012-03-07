@@ -3,16 +3,19 @@ package it.patamau.gui;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.HeadlessException;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 public class OptionsDialog extends JDialog implements ActionListener {
@@ -76,7 +79,23 @@ public class OptionsDialog extends JDialog implements ActionListener {
 		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		int ch = fc.showOpenDialog(this);
 		if(ch==JFileChooser.APPROVE_OPTION){
-			return fc.getSelectedFile();
+			File f = fc.getSelectedFile();
+			if(!f.exists()){
+				ch = JOptionPane.showConfirmDialog(this, f+" does not exist: do you want to create it?", "Folder not found", JOptionPane.YES_NO_OPTION);
+				if(ch!=JOptionPane.YES_OPTION) return src; //return original file
+				boolean done = false;
+				try {
+					done = f.mkdirs();
+				} catch (Exception e) {
+					JOptionPane.showMessageDialog(this, "Error creating "+f+": "+e.getMessage(), "Folder create error", JOptionPane.ERROR_MESSAGE);
+					return src;
+				} 
+				if(!done){
+					JOptionPane.showMessageDialog(this, "Unable to create "+f, "Folder create error", JOptionPane.ERROR_MESSAGE);
+					return src;
+				}
+			}
+			return f;
 		}else{
 			return null;
 		}
