@@ -28,6 +28,8 @@ public class SaveData {
 		date = "N/A";
 		level = -1;
 		screenshot = null;
+		filetime = new Date(0);
+		saveFile = null;
 	}
 
 	public String getName() {
