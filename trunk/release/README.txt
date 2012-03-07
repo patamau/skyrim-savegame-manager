@@ -1,11 +1,16 @@
 Skyrim Savegame Manager
-2012/03/06 0.2b
+2012/03/07 0.3b
 Matteo Pedrotti
 patamau@gmail.com
 =======================
 
 Changelog
 ---------
+> 0.3b
++ added progress monitor
++ added setting savegames timestamp to unpacked files so that Skyrim correctly recognize the latest save
++ added credits
+
 > 0.2b
 + first publicly available version
 

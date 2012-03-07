@@ -131,9 +131,33 @@ public class ProfileManager {
 		if(profile.getZipFile()==null||!profile.getZipFile().exists()){
 			throw new IOException("No such archive available ("+profile.getZipFile()+")");
 		}
-		unpackZip(profile.getZipFile(), savesFolder);
+		//unpackZip(profile.getZipFile(), savesFolder);
+		byte[] buf = new byte[65535];
+		ZipFile zf = new ZipFile(profile.getZipFile());
+		for(SaveData s: profile.getSaves()){
+			ZipEntry entry = zf.getEntry(s.getSaveFile().getName());
+	    	System.out.println("Unpacking "+entry.getName());
+	    	File f = new File(savesFolder.getAbsoluteFile()+File.separator+entry.getName());
+	    	BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
+	    	InputStream in = zf.getInputStream(entry);
+	    	int len;
+	    	while((len=in.read(buf))>=0){
+	    		out.write(buf,0,len);
+	    	}
+	    	out.close();
+	    	in.close();
+	    	f.setLastModified(s.getFiletime().getTime());
+		}
+		zf.close();
 	}
 	
+	/**
+	 * Unpack all the files from the source
+	 * @deprecated use deployProfile to correctly set last modified time stamp
+	 * @param sourceFile
+	 * @param destinationFolder
+	 * @throws IOException
+	 */
 	public static void unpackZip(final File sourceFile, final File destinationFolder) throws IOException {
 		byte[] buf = new byte[1024];
 		System.out.println("Opening "+sourceFile.getName());
@@ -141,7 +165,8 @@ public class ProfileManager {
 	    for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements();){
 	    	ZipEntry entry = e.nextElement();
 	    	System.out.println("Unpacking "+entry.getName());
-	    	BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(destinationFolder.getAbsoluteFile()+File.separator+entry.getName()));
+	    	File f = new File(destinationFolder.getAbsoluteFile()+File.separator+entry.getName());
+	    	BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
 	    	InputStream in = zf.getInputStream(entry);
 	    	int len;
 	    	while((len=in.read(buf))>=0){
