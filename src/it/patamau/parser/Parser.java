@@ -43,7 +43,6 @@ public class Parser {
 	}
 	
 	private static byte[] 
-			wbuffer = new byte[1024],
 			buffer8 = new byte[8],
 			buffer4 = new byte[4],
 			buffer3 = new byte[3],
@@ -143,22 +142,40 @@ public class Parser {
 		}
 	}
 	
-	public static final void parseRefId(final InputStream s) throws IOException {
-		int b = parseInt24(s);
-		String refID = Integer.toHexString(b);
-		System.out.println("RefID "+refID);
+	public static final int parseRefId(final InputStream s) throws IOException {
+		int b = s.read();
+		int code = (b & 0xC0) >> 6;
+		int num = (b & 0x3F) << 8;
+		num |= (s.read() & 0xFF);
+		num <<= 8;
+		num |= (s.read() & 0xFF);
+		return num;
+	}
+	
+	public static final int parseVsVal(final InputStream s) throws IOException {
+		//F=1111 8=1000 C=1100 3=0011
+		int b = s.read();
+		int val = (b & 0xC0) >> 6;
+		System.out.println("vsval key is "+val);
+		int num = (b & 0x3F);
+		for(int i=0; i<val; ++i){
+			num <<= 8;
+			int a = s.read() & 0xFF;
+			num |= a;
+		}
+		int st = Integer.numberOfLeadingZeros(num);
+		num <<= st;
+		num = Integer.reverse(num);
+		return num;
 	}
 	
 	public static final void parseGlobalVariables(final InputStream s) throws IOException {
-		//long count = parseLong64(s);
-		//int count = parseInt32(s);
-		int count = parseInt16(s);
-		//int count = s.read();
-		System.out.println("Global variables "+count);
-		for(int i=0; i<count; ++i){
-			parseRefId(s);
+		int num = parseVsVal(s);
+		System.out.println("Global variables are "+num);
+		for(int i=0; i<num; ++i){
+			int ref = parseRefId(s);
 			float value = Float.intBitsToFloat(parseInt32(s));
-			System.out.println(i+" Parsed "+value);
+			System.out.println(i+": "+Integer.toHexString(ref)+"="+value);
 		}
 	}
 	
@@ -234,10 +251,10 @@ public class Parser {
 	public static void main(String args[]){
 		SaveData save;
 		try {
-			InputStream s = new FileInputStream("C:\\Users\\Matteo Pedrotti\\Documents\\My Games\\Skyrim\\Saves\\quicksave.ess");
+			InputStream s = new FileInputStream(System.getProperty("user.home")+"\\Documenti\\My Games\\Skyrim\\Saves\\autosave3.ess");
 			save = Parser.parse(s);
 			s.close();
-			//GUI.showQuickPick(save);
+			GUI.showQuickPick(save);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
