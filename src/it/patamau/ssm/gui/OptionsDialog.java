@@ -1,4 +1,4 @@
-package it.patamau.gui;
+package it.patamau.ssm.gui;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;

@@ -1,4 +1,4 @@
-package it.patamau;
+package it.patamau.ssm;
 
 import java.io.File;
 import java.util.logging.FileHandler;
@@ -9,8 +9,8 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import it.patamau.data.ProfileManager;
-import it.patamau.gui.GUI;
+import it.patamau.ssm.data.ProfileManager;
+import it.patamau.ssm.gui.GUI;
 
 public class Main {
 	

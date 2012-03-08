@@ -1,6 +1,6 @@
-package it.patamau.gui;
+package it.patamau.ssm.gui;
 
-import it.patamau.Main;
+import it.patamau.ssm.Main;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
