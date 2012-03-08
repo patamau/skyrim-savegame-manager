@@ -1,10 +1,9 @@
-package it.patamau.parser;
+package it.patamau.ssm.parser;
 
-import it.patamau.data.SaveData;
-import it.patamau.gui.GUI;
+import it.patamau.ssm.data.SaveData;
+import it.patamau.util.Logger;
 
 import java.awt.image.BufferedImage;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
@@ -13,6 +12,8 @@ import java.util.Date;
 import javax.swing.ImageIcon;
 
 public class Parser {
+	
+	private static final Logger logger = Logger.getLogger(Parser.class.getName());
 	
 	public static final long bytesToLong(final byte[] b){
 	    long num = 0;
@@ -89,7 +90,7 @@ public class Parser {
 			ch = s.read();
 			if(ch<0) return;
 		}
-		System.out.println("Magic ok");
+		logger.debug("Magic ok");
 	}
 	
 	private static final String parseString(final InputStream s) throws IOException{
@@ -102,13 +103,13 @@ public class Parser {
 	private static final ImageIcon parseScreenshotData(final InputStream s) throws IOException{
 		int shotWidth = parseInt32(s);
 		int shotHeight = parseInt32(s);
-		System.out.println("Screenshot size "+shotWidth+"x"+shotHeight);
+		logger.debug("Screenshot size ",shotWidth,"x",shotHeight);
 		int imgsize = 3*shotWidth*shotHeight;
 		byte[] data = new byte[imgsize];
 		int len, pos = 0;
 		while((len = s.read(data, pos, imgsize-pos))>=0){
 			pos+=len;
-			System.out.println("Image read status "+pos+"/"+imgsize+" = "+((float)pos/(float)imgsize*100f)+"%");
+			logger.debug("Image read status ",pos,"/",imgsize," = ",((float)pos/(float)imgsize*100f),"%");
 			if(pos>=imgsize) break;
 		}
 		
@@ -125,10 +126,10 @@ public class Parser {
 	
 	public static final void parsePluginInfo(final InputStream s) throws IOException {
 		int pluginCount = s.read();
-		System.out.println("Plugins "+pluginCount);
+		logger.debug("Plugins ",pluginCount);
 		for(int i=0; i<pluginCount; ++i){
 			String plugin = parseString(s);
-			System.out.println("Plugin "+plugin);
+			logger.debug("Plugin ",plugin);
 		}
 	}
 	
@@ -138,26 +139,27 @@ public class Parser {
 			String name = parseString(s);
 			int category = s.read();
 			int value = parseInt32(s);
-			System.out.println(name+" "+category+" "+value);
+			logger.debug(name," ",category," ",value);
 		}
 	}
 	
 	public static final int parseRefId(final InputStream s) throws IOException {
 		int b = s.read();
 		int code = (b & 0xC0) >> 6;
+		//XXX: I don't really need to know where the RefID is pointing at since I don't have the resources
 		/*
 		switch(code){
 		case 0:
-			System.out.println("RefID is FormID index");
+			logger.debug("RefID is FormID index");
 			break;
 		case 1:
-			System.out.println("RefID is a Skyrim.esm index");
+			logger.debug("RefID is a Skyrim.esm index");
 			break;
 		case 2:
-			System.out.println("RefID is a plugin index");
+			logger.debug("RefID is a plugin index");
 			break;
 		default:
-			System.out.println("RefID type is unknown");
+			logger.debug("RefID type is unknown");
 			break;
 		}
 		*/
@@ -169,10 +171,10 @@ public class Parser {
 	}
 	
 	public static final int parseVsVal(final InputStream s) throws IOException {
-		//F=1111 8=1000 C=1100 3=0011
+		//memo: F=1111 8=1000 C=1100 3=0011
 		int b = s.read();
 		int val = (b & 0xC0) >> 6;
-		System.out.println("vsval key is "+val);
+		logger.debug("vsval key is ",val);
 		int num = (b & 0x3F);
 		for(int i=0; i<val; ++i){
 			num <<= 8;
@@ -187,27 +189,53 @@ public class Parser {
 	
 	public static final void parseGlobalVariables(final InputStream s) throws IOException {
 		int num = parseVsVal(s);
-		System.out.println("Global variables are "+num);
+		logger.debug("Global variables are ",num);
 		for(int i=0; i<num; ++i){
 			int ref = parseRefId(s);
 			float value = Float.intBitsToFloat(parseInt32(s));
-			System.out.println(i+": "+Integer.toHexString(ref)+"="+value);
+			logger.debug(i,": ",Integer.toHexString(ref),"=",value);
 		}
+	}
+	
+	public static final void parsePlayerLocation(final InputStream s) throws IOException {
+		//FIXME: this isn't working!!!!!	
+		/* 	
+		int _xa = parseInt32(s);
+		//1 11010100 01100000000000011111111
+		float xa = Float.intBitsToFloat(_xa);
+		int angleID = parseRefId(s);
+		float ya = Float.intBitsToFloat(parseInt32(s));
+		float za = Float.intBitsToFloat(parseInt32(s));
+		logger.debug("RefID "+Integer.toHexString(angleID));
+		int _x = parseInt32(s);
+		//0 11100111 10001110011001101000001       
+		logger.debug("X: "+Integer.toBinaryString(_x));
+		float x = Float.intBitsToFloat(_x);
+		float y = Float.intBitsToFloat(parseInt32(s));
+		int coordID = parseRefId(s);
+		logger.debug("RefID "+Integer.toHexString(coordID));
+		float z = Float.intBitsToFloat(parseInt32(s));
+		logger.debug("Player location "+x+","+y+","+z+"@"+xa+","+ya+","+za);
+		*/
+		s.skip(30);
 	}
 	
 	private static final void parseGlobalData(final InputStream s) throws IOException {
 		int type = parseInt32(s);
 		int length = parseInt32(s);
-		System.out.println("GlobalData type="+type+" length="+length);
+		logger.debug("GlobalData type=",type," length=",length);
 		switch(type){
 			case 0: //Misc Stats
 				parseMiscStats(s);
+			break;
+			case 1:
+				parsePlayerLocation(s);
 			break;
 			case 3:
 				parseGlobalVariables(s);
 			break;
 			default:
-				System.out.println("Unsupported GlobalData type "+type);
+				logger.debug("Unsupported GlobalData type ",type);
 				s.skip(length);
 			break;
 		}
@@ -235,16 +263,16 @@ public class Parser {
 			length2 = parseInt16(stream);
 			break;
 		default:
-			System.out.println("Undefined changeForm data length "+size);
+			logger.debug("Undefined changeForm data length ",size);
 			break;
 		} 
 		if(type==18){
-			System.out.println("ChangeForm "+Integer.toHexString(formID)
-					+" "+Integer.toBinaryString(changeFlags)
-					+" ["+size+"] "+type+"x"+length1+"b compressed "+length2+"b ("+version+")");
+			logger.debug("ChangeForm "+Integer.toHexString(formID)
+					," ",Integer.toBinaryString(changeFlags)
+					," ["+size+"] ",type,"x",length1,"b compressed ",length2,"b (",version,")");
 			for(int i=0; i<length1; ++i){
 				int val = stream.read() & 0xFF;
-				System.out.println("DATA["+i+"] "+val);
+				logger.debug("DATA[",i,"] ",val);
 			}
 		}else{
 			stream.skip(length1);
@@ -254,47 +282,53 @@ public class Parser {
 	public static SaveData parse(final InputStream stream) throws IOException{
 		parseMagic(stream);
 		int hsize = parseInt32(stream);
-		System.out.println("Header size is "+hsize);
+		logger.debug("Header size is ",hsize);
 		int version = parseInt32(stream);
-		System.out.println("Version is "+version);
+		logger.debug("Version is ",version);
 		int saveNumber = parseInt32(stream);
-		System.out.println("Save number is "+saveNumber);
+		logger.debug("Save number is ",saveNumber);
 		String name = parseString(stream);
-		System.out.println("Name is "+name);
+		logger.debug("Name is ",name);
 		int playerLevel = parseInt32(stream);
-		System.out.println("Level is "+playerLevel);
+		logger.debug("Level is ",playerLevel);
 		String playerLocation = parseString(stream);
-		System.out.println("Location is "+playerLocation);
+		logger.debug("Location is ",playerLocation);
 		String gameDate = parseString(stream);
-		System.out.println("Date is "+gameDate);
+		logger.debug("Date is ",gameDate);
 		String playerRace = parseString(stream);
-		System.out.println("Race is "+playerRace);		
+		logger.debug("Race is ",playerRace);		
 		int u1 = parseInt16(stream);
 		float u2 = Float.intBitsToFloat(parseInt32(stream));
 		float u3 = Float.intBitsToFloat(parseInt32(stream));
-		System.out.println("Unknown data "+u1+" "+u2+" "+u3);
+		logger.debug("Unknown data ",u1," ",u2," ",u3);
 		Date filetime = parseFiletime(stream);
-		System.out.println("Filetime is "+filetime);
+		logger.debug("Filetime is ",filetime);
+		//FIXME: only load the screenshot when required to save parsing time and memory (HUGE improvements)
 		ImageIcon screenshot = parseScreenshotData(stream);
+		
+		//XXX: I'm sorry but the following data is pretty useless except GlobalData/MiscData which I'll give support soon :)
+		//XXX: lazy tosser
+		/*
 		int formVersion = stream.read();
-		System.out.println("Form version is "+formVersion);
+		logger.debug("Form version is ",formVersion);
 		int pluginInfoSize = parseInt32(stream);
-		System.out.println("PluginInfo size is "+pluginInfoSize);
+		logger.debug("PluginInfo size is ",pluginInfoSize);
 		stream.skip(pluginInfoSize);
 		int changeFormCount = 0;
 		for(int i=0; i<25; ++i){
 			int val = parseInt32(stream);
 			if(9==i) changeFormCount=val;
-			System.out.println("FileLocationTable value "+val);
+			logger.debug("FileLocationTable value ",val);
 		}
 		for(int i=0; i<23; ++i){
 			parseGlobalData(stream);
 		}
-		System.out.println("ChangeFormCount "+changeFormCount);
-		for(int i=0; i< 2/*changeFormCount*/; ++i){
+		logger.debug("ChangeFormCount ",changeFormCount);
+		for(int i=0; i< changeFormCount; ++i){
 			parseChangeForm(stream);
 		}
-		System.out.println("Done");
+		logger.debug("Done");
+		*/
 		
 		SaveData save = new SaveData();
 		save.setName(name);
@@ -305,17 +339,5 @@ public class Parser {
 		save.setScreenshot(screenshot);
 		save.setFiletime(filetime);
 		return save;
-	}
-	
-	public static void main(String args[]){
-		SaveData save;
-		try {
-			InputStream s = new FileInputStream(System.getProperty("user.home")+"\\Documenti\\My Games\\Skyrim\\Saves\\autosave3.ess");
-			save = Parser.parse(s);
-			s.close();
-			GUI.showQuickPick(save);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 }

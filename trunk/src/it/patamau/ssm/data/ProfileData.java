@@ -1,4 +1,4 @@
-package it.patamau.data;
+package it.patamau.ssm.data;
 
 import java.io.File;
 import java.util.ArrayList;

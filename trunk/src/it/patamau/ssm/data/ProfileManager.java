@@ -1,8 +1,8 @@
-package it.patamau.data;
+package it.patamau.ssm.data;
 
-import it.patamau.Main;
-import it.patamau.gui.GUI;
-import it.patamau.parser.Parser;
+import it.patamau.ssm.Main;
+import it.patamau.ssm.gui.GUI;
+import it.patamau.ssm.parser.Parser;
 
 import java.io.BufferedOutputStream;
 import java.io.File;

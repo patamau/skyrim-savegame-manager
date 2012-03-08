@@ -1,9 +1,9 @@
-package it.patamau.gui;
+package it.patamau.ssm.gui;
 
-import it.patamau.Main;
-import it.patamau.data.ProfileData;
-import it.patamau.data.ProfileManager;
-import it.patamau.data.SaveData;
+import it.patamau.ssm.Main;
+import it.patamau.ssm.data.ProfileData;
+import it.patamau.ssm.data.ProfileManager;
+import it.patamau.ssm.data.SaveData;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
