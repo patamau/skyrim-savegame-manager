@@ -145,6 +145,22 @@ public class Parser {
 	public static final int parseRefId(final InputStream s) throws IOException {
 		int b = s.read();
 		int code = (b & 0xC0) >> 6;
+		/*
+		switch(code){
+		case 0:
+			System.out.println("RefID is FormID index");
+			break;
+		case 1:
+			System.out.println("RefID is a Skyrim.esm index");
+			break;
+		case 2:
+			System.out.println("RefID is a plugin index");
+			break;
+		default:
+			System.out.println("RefID type is unknown");
+			break;
+		}
+		*/
 		int num = (b & 0x3F) << 8;
 		num |= (s.read() & 0xFF);
 		num <<= 8;
@@ -197,6 +213,44 @@ public class Parser {
 		}
 	}
 	
+	public static void parseChangeForm(final InputStream stream) throws IOException{
+		int formID = parseRefId(stream);
+		int changeFlags = parseInt32(stream);
+		int _type = stream.read() & 0xFF;
+		int size = (_type & 0xC0) >> 6;
+		int type = _type & 0x3F;
+		int version = stream.read() & 0xFF;
+		int length1 = 0, length2 = 0;
+		switch(size){
+		case 0:
+			length1 = stream.read() & 0xFF;
+			length2 = stream.read() & 0xFF;
+			break;
+		case 1:
+			length1 = parseInt16(stream);
+			length2 = parseInt16(stream);
+			break;
+		case 2:
+			length1 = parseInt16(stream);
+			length2 = parseInt16(stream);
+			break;
+		default:
+			System.out.println("Undefined changeForm data length "+size);
+			break;
+		} 
+		if(type==18){
+			System.out.println("ChangeForm "+Integer.toHexString(formID)
+					+" "+Integer.toBinaryString(changeFlags)
+					+" ["+size+"] "+type+"x"+length1+"b compressed "+length2+"b ("+version+")");
+			for(int i=0; i<length1; ++i){
+				int val = stream.read() & 0xFF;
+				System.out.println("DATA["+i+"] "+val);
+			}
+		}else{
+			stream.skip(length1);
+		}
+	}
+	
 	public static SaveData parse(final InputStream stream) throws IOException{
 		parseMagic(stream);
 		int hsize = parseInt32(stream);
@@ -227,14 +281,19 @@ public class Parser {
 		int pluginInfoSize = parseInt32(stream);
 		System.out.println("PluginInfo size is "+pluginInfoSize);
 		stream.skip(pluginInfoSize);
+		int changeFormCount = 0;
 		for(int i=0; i<25; ++i){
 			int val = parseInt32(stream);
+			if(9==i) changeFormCount=val;
 			System.out.println("FileLocationTable value "+val);
 		}
-		parseGlobalData(stream);
-		parseGlobalData(stream);
-		parseGlobalData(stream);
-		parseGlobalData(stream);
+		for(int i=0; i<23; ++i){
+			parseGlobalData(stream);
+		}
+		System.out.println("ChangeFormCount "+changeFormCount);
+		for(int i=0; i< 2/*changeFormCount*/; ++i){
+			parseChangeForm(stream);
+		}
 		System.out.println("Done");
 		
 		SaveData save = new SaveData();
