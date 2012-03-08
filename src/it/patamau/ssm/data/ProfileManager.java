@@ -187,16 +187,17 @@ public class ProfileManager {
 	 * @throws IOException
 	 */
 	public static File createZip(final String profileName, final File source, final File destination) throws IOException {
-		byte[] buf = new byte[1024];
+		byte[] buf = new byte[65535];
 		
 	    File outFile = new File(destination, profileName+".zip");
 	    ZipOutputStream out = new ZipOutputStream(new FileOutputStream(outFile));
 
+	    Parser p = new Parser();
 	    for (File f: source.listFiles()) {
 			if(!f.isFile()) continue;
 			if(!f.getName().endsWith(".ess")) continue;
 			FileInputStream fis = new FileInputStream(f);
-			SaveData s = Parser.parse(fis);
+			SaveData s = p.parse(fis);
 			fis.close();
 			if(!s.getName().equals(profileName)) continue;
 	        FileInputStream in = new FileInputStream(f);
@@ -258,10 +259,11 @@ public class ProfileManager {
 			throw new IOException(folder+" is not a directory");
 		}
 		
+		Parser p = new Parser();
 		for(File f: folder.listFiles()){
 			if(!f.getName().endsWith(".ess")) continue;
 			FileInputStream in = new FileInputStream(f);
-			SaveData save = Parser.parse(in);
+			SaveData save = p.parse(in);
 			save.setSaveFile(f);
 			in.close();
 			System.out.println("Parsed "+save.getName()+" ("+f+")");
@@ -286,9 +288,10 @@ public class ProfileManager {
 		List<SaveData> saves = new ArrayList<SaveData>();
 		ZipFile zf = new ZipFile(zipFile);
 		SaveData latest = null;
+		Parser p = new Parser();
 	    for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements();){
 	    	ZipEntry entry = e.nextElement();
-	    	SaveData save = Parser.parse(zf.getInputStream(entry));
+	    	SaveData save = p.parse(zf.getInputStream(entry));
 	    	save.setSaveFile(new File(entry.getName()));
 	    	if(latest!=null){
 	    		long st = save.getFiletime().getTime();
@@ -359,11 +362,12 @@ public class ProfileManager {
 	 */
 	public static List<SaveData> getFolderSaves(final File folder) throws IOException{
 		List<SaveData> saves = new ArrayList<SaveData>();
+		Parser p = new Parser();
 		for(File f : folder.listFiles()){
 			if(!f.isFile()) continue;
 			if(!f.getName().endsWith(".ess")) continue;
 			InputStream in = new FileInputStream(f);
-			SaveData save = Parser.parse(in);
+			SaveData save = p.parse(in);
 			save.setSaveFile(f);
 			in.close();
 			saves.add(save);

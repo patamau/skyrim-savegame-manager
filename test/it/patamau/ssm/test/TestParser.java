@@ -22,14 +22,15 @@ public class TestParser {
 	@Test
 	public void stressParser() throws Exception{
 		List<SaveData> list = new LinkedList<SaveData>();
-		for(int i=0; i<100; ++i){
-			list.add(testParser());
+		Parser p = new Parser();
+		for(int i=0; i<1000; ++i){
+			list.add(testParser(p));
 		}
 	}
 
-	public SaveData testParser() throws Exception{
+	public SaveData testParser(final Parser p) throws Exception{
 		InputStream s = new FileInputStream(System.getProperty("user.home")+"\\Documenti\\My Games\\Skyrim\\Saves\\quicksave.ess");
-		SaveData save = Parser.parse(s);
+		SaveData save = p.parse(s);
 		s.close();
 		return save;
 	}
