@@ -2,6 +2,8 @@ package it.patamau.ssm.data;
 
 import java.io.File;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.ImageIcon;
 
@@ -20,6 +22,8 @@ public class SaveData {
 		level;
 	private ImageIcon
 		screenshot;
+	private final Map<Integer, Map<String, Integer>>
+		globalData;
 	
 	public SaveData(){
 		name = "N/A";
@@ -30,6 +34,7 @@ public class SaveData {
 		screenshot = null;
 		filetime = new Date(0);
 		saveFile = null;
+		globalData = new HashMap<Integer, Map<String, Integer>>();
 	}
 
 	public String getName() {
@@ -92,8 +97,25 @@ public class SaveData {
 		return saveFile;
 	}
 
-	public void setSaveFile(File saveFile) {
+	public void setSaveFile(final File saveFile) {
 		this.saveFile = saveFile;
+	}
+	
+	public void addGlobalData(final Integer type, final String key, final Integer value){
+		Map<String, Integer> map = globalData.get(type);
+		if(map==null){
+			map = new HashMap<String, Integer>();
+			globalData.put(type, map);
+		}
+		map.put(key, value);
+	}
+	
+	public Map<String, Integer> getGlobalData(final Integer type){
+		return globalData.get(type);
+	}
+	
+	public void clearGlobalData(){
+		globalData.clear();
 	}
 	
 	public String toString(){

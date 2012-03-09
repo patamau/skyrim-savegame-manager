@@ -3,6 +3,7 @@ package it.patamau.ssm.data;
 import it.patamau.ssm.Main;
 import it.patamau.ssm.gui.GUI;
 import it.patamau.ssm.parser.Parser;
+import it.patamau.util.Logger;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -24,6 +25,8 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class ProfileManager {
+	
+	private static final Logger logger = Logger.getLogger(ProfileManager.class.getName());
 	
 	private static final String 
 		KEY_PROFILES_FOLDER = "profilesFolder",
@@ -236,12 +239,17 @@ public class ProfileManager {
 			if(!f.getName().endsWith(".zip")) continue;
 			System.out.println("Parsing "+f.getName());
 			ProfileData pd = new ProfileData(f);
-			pd.addAll(getZipSaves(f));
-			if(current.containsKey(pd.getData().getName())){
-				pd.setCurrent(true);
-			}
-			System.out.println("Parsed "+pd.getSaves().size()+" saves");
-			profiles.put(pd.getData().getName(), pd);
+			try{
+				pd.addAll(getZipSaves(f));
+				if(current.containsKey(pd.getData().getName())){
+					pd.setCurrent(true);
+				}
+				System.out.println("Parsed "+pd.getSaves().size()+" saves");
+				profiles.put(pd.getData().getName(), pd);
+			}catch(IOException e){
+				//TODO: log error
+				e.printStackTrace();
+			}			
  		}		
 	}
 	
