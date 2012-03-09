@@ -59,10 +59,10 @@ public class ProfileManager {
 			String t; 
 			t = properties.getProperty(KEY_PROFILES_FOLDER);
 			if(t!=null) profilesFolder = new File(t);
-			System.out.println("ProfilesFolder: "+profilesFolder);
+			logger.debug("ProfilesFolder: "+profilesFolder);
 			t = properties.getProperty(KEY_SAVES_FOLDER);
 			if(t!=null) savesFolder = new File(t);
-			System.out.println("SavesFolder: "+savesFolder);
+			logger.debug("SavesFolder: "+savesFolder);
 		}catch(FileNotFoundException e){
 			saveProperties();
 		}finally{
@@ -73,7 +73,7 @@ public class ProfileManager {
 	}
 	
 	public void saveProperties() throws IOException{
-		System.out.println("Saving configuration to "+DEF_PROP_FILE);
+		logger.debug("Saving configuration to "+DEF_PROP_FILE);
 		FileOutputStream fos = null;
 		try{
 			fos = new FileOutputStream(DEF_PROP_FILE);
@@ -141,7 +141,7 @@ public class ProfileManager {
 		ZipFile zf = new ZipFile(profile.getZipFile());
 		for(SaveData s: profile.getSaves()){
 			ZipEntry entry = zf.getEntry(s.getSaveFile().getName());
-	    	System.out.println("Unpacking "+entry.getName());
+	    	logger.debug("Unpacking ",entry.getName());
 	    	File f = new File(savesFolder.getAbsoluteFile()+File.separator+entry.getName());
 	    	BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
 	    	InputStream in = zf.getInputStream(entry);
@@ -165,11 +165,11 @@ public class ProfileManager {
 	 */
 	public static void unpackZip(final File sourceFile, final File destinationFolder) throws IOException {
 		byte[] buf = new byte[1024];
-		System.out.println("Opening "+sourceFile.getName());
+		logger.debug("Opening ",sourceFile.getName());
 		ZipFile zf = new ZipFile(sourceFile);
 	    for (Enumeration<? extends ZipEntry> e = zf.entries(); e.hasMoreElements();){
 	    	ZipEntry entry = e.nextElement();
-	    	System.out.println("Unpacking "+entry.getName());
+	    	logger.debug("Unpacking ",entry.getName());
 	    	File f = new File(destinationFolder.getAbsoluteFile()+File.separator+entry.getName());
 	    	BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
 	    	InputStream in = zf.getInputStream(entry);
@@ -205,7 +205,7 @@ public class ProfileManager {
 			if(!s.getName().equals(profileName)) continue;
 	        FileInputStream in = new FileInputStream(f);
 	        out.putNextEntry(new ZipEntry(f.getName()));
-	        System.out.println("Adding save game "+f.getName());
+	        logger.debug("Adding save game ",f.getName());
 	        int len;
 	        while ((len = in.read(buf)) >= 0) {
 	            out.write(buf, 0, len);
@@ -237,17 +237,17 @@ public class ProfileManager {
 		
 		for(File f: profilesFolder.listFiles()){
 			if(!f.getName().endsWith(".zip")) continue;
-			System.out.println("Parsing "+f.getName());
+			logger.debug("Parsing ",f.getName());
 			ProfileData pd = new ProfileData(f);
 			try{
 				pd.addAll(getZipSaves(f));
 				if(current.containsKey(pd.getData().getName())){
 					pd.setCurrent(true);
 				}
-				System.out.println("Parsed "+pd.getSaves().size()+" saves");
+				logger.debug("Parsed ",pd.getSaves().size()," saves");
 				profiles.put(pd.getData().getName(), pd);
 			}catch(IOException e){
-				//TODO: log error
+				logger.error("Error loading ",f.getName(),e);
 				e.printStackTrace();
 			}			
  		}		
@@ -274,7 +274,7 @@ public class ProfileManager {
 			SaveData save = p.parse(in);
 			save.setSaveFile(f);
 			in.close();
-			System.out.println("Parsed "+save.getName()+" ("+f+")");
+			logger.debug("Parsed ",save.getName()," (",f,")");
 			ProfileData profile = map.get(save.getName());
 			if(profile==null){
 				profile = new ProfileData();
@@ -314,7 +314,7 @@ public class ProfileManager {
 	    		latest = save;
 	    		saves.add(save);
 	    	}
-	    	System.out.println("Save data "+save.getName()+" "+save.getLevel()+" "+save.getDate()+" "+save.getLocation());
+	    	logger.info("Save data ",save.getName()," ",save.getLevel()," ",save.getDate()," ",save.getLocation());
 	    }
 	    zf.close();
 		return saves;
