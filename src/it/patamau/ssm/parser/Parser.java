@@ -137,6 +137,7 @@ public class Parser {
 		int count = parseInt32();
 		for(int i=0; i<count; ++i){
 			String name = parseString();
+			name = name.substring(0, Math.min(name.length(), 64));
 			int category = parseInt8();
 			int value = parseInt32();
 			logger.debug(name," ",category," ",value);
@@ -248,7 +249,7 @@ public class Parser {
 		int pluginInfoSize = parseInt32();
 		logger.debug("PluginInfo size is ",pluginInfoSize);
 		stream.skip(pluginInfoSize); //XXX: skipping useless info
-		stream.skip(25); //XXX: skipping absolute offsets
+		stream.skip(100); //XXX: skipping absolute offsets
 		/*
 		int globalDataTable1Offset = 0;
 		for(int i=0; i<25; ++i){
