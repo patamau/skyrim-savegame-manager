@@ -3,9 +3,9 @@ package it.patamau.util;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,23 +25,32 @@ public class Logger {
 	
 	private static final String[] _levels = new String[]{
 		"DEBUG",
-		"INFO",
-		"WARN",
+		"INFO ",
+		"WARN ",
 		"ERROR",
 		"FATAL"
 	};
 
+	private static int LEVEL = L_DEBUG;
 	private final static Map<String, Logger> loggers = new HashMap<String,Logger>();
 	private final static StringBuilder sbuild = new StringBuilder();
-	private static int LEVEL = L_DEBUG;
-	private final static List<PrintStream> OUTPUT = new LinkedList<PrintStream>();
+	private final static Collection<PrintStream> streams = new LinkedList<PrintStream>();
 	private final static RuntimeMXBean runtimeMan = ManagementFactory.getRuntimeMXBean();
 	
 	static{
-		OUTPUT.add(System.out);
+		streams.add(System.out);
 	}
 	
 	private final String name;
+	
+	/**
+	 * for you lazy bitch:
+	 *    new Logger(MyClass.class.getName());
+	 * @param clazz
+	 */
+	private Logger(final Class<?> clazz){
+		this.name = clazz.getName();
+	}
 	
 	private Logger(final String name){
 		this.name = name;
@@ -56,16 +65,24 @@ public class Logger {
 		LEVEL = level;
 	}
 	
-	public static void addStream(final PrintStream output){
-		OUTPUT.add(output);
+	public static int getLevel(){
+		return LEVEL;
 	}
 	
-	public static void removeStream(final PrintStream output){
-		OUTPUT.remove(output);
+	public static void addStream(final PrintStream stream){
+		streams.add(stream);
+	}
+	
+	public static void removeStream(final PrintStream stream){
+		streams.remove(stream);
+	}
+	
+	public static Collection<PrintStream> getStreams(){
+		return streams;
 	}
 	
 	public static void clearStreams(){
-		OUTPUT.clear();
+		streams.clear();
 	}
 	
 	public static Logger getLogger(final String name){
@@ -78,7 +95,7 @@ public class Logger {
 	}
 	
 	private static void print(final String msg){
-		for(PrintStream p: OUTPUT){
+		for(PrintStream p: streams){
 			p.println(msg);
 		}
 	}
