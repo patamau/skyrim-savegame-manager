@@ -31,7 +31,7 @@ public class Logger {
 		"FATAL"
 	};
 
-	private static int LEVEL = L_DEBUG;
+	private static int level = L_DEBUG;
 	private final static Map<String, Logger> loggers = new HashMap<String,Logger>();
 	private final static StringBuilder sbuild = new StringBuilder();
 	private final static Collection<PrintStream> streams = new LinkedList<PrintStream>();
@@ -56,17 +56,12 @@ public class Logger {
 		this.name = name;
 	}
 	
-	private static final void checkLevel(final int level){
-		if(0>level||L_FATAL<level) throw new IllegalArgumentException(level+" is not a valid logging level");
-	}
-	
-	public static void setLevel(final int level){
-		checkLevel(level);
-		LEVEL = level;
+	public static void setLevel(final int _level){
+		level = _level;
 	}
 	
 	public static int getLevel(){
-		return LEVEL;
+		return level;
 	}
 	
 	public static void addStream(final PrintStream stream){
@@ -100,13 +95,12 @@ public class Logger {
 		}
 	}
 	
-	public Logger log(final int level, final Object ... messages){
-		checkLevel(level);
-		if(LEVEL>level) return this;
+	public Logger log(final int _level, final Object ... messages){
+		if(level>_level) return this;
 		synchronized(sbuild){
 			sbuild.setLength(0);
 			sbuild.append("[");
-			sbuild.append(_levels[level]);
+			sbuild.append(_levels[_level]);
 			sbuild.append("]@");
 			sbuild.append(runtimeMan.getUptime());
 			sbuild.append(" ");
